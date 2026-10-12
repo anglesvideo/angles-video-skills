@@ -14,10 +14,10 @@
   "homepage": "https://angles.video",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/anglesvideo/angles-video-skill.git"
+    "url": "git+https://github.com/anglesvideo/angles-video-skills.git"
   },
   "bugs": {
-    "url": "https://github.com/anglesvideo/angles-video-skill/issues"
+    "url": "https://github.com/anglesvideo/angles-video-skills/issues"
   },
   "license": "MIT",
   "type": "module",
