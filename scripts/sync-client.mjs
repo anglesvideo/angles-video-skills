@@ -32,6 +32,7 @@ export const SHARED_FILES = new Map([
     'scripts/music.mjs',
     'scripts/sfx.mjs',
     'scripts/image.mjs',
+    'scripts/character.mjs',
     'scripts/frames.mjs',
     'scripts/stills.mjs',
     'scripts/render.mjs',
@@ -56,7 +57,7 @@ const HOSTED_PATH_FILES = ['src/client.mjs', 'src/api.md'];
  * starter only the mechanics both kinds need, and nothing from the hosted path.
  */
 export const SKILLS_WITH_THEIR_OWN_STARTER = {
-  'create-music-video': ['tsconfig.json', 'src/index.ts', 'scripts/media.mjs', 'scripts/music.mjs', 'scripts/image.mjs', 'scripts/finish.mjs'].map(
+  'create-music-video': ['tsconfig.json', 'src/index.ts', 'scripts/media.mjs', 'scripts/music.mjs', 'scripts/image.mjs', 'scripts/character.mjs', 'scripts/finish.mjs'].map(
     file => `src/starter/${file}`
   ),
 };

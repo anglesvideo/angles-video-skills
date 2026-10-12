@@ -11,6 +11,11 @@
 //       for another shape; --force makes it again from the same words.
 //   node scripts/image.mjs dawn "The harbour at dawn, the window dark, mist on the water" --like harbour
 //       the same place and things again, changed only as the words say
+//   node scripts/image.mjs desk "At a desk at night, lit by one monitor, a mug in one hand" --character dev-night
+//       a character the account keeps, drawn again here: their pictures and
+//       their words go along. scripts/character.mjs keeps one and lists them.
+//       A picture is drawn from three of theirs at most: the first three, or
+//       the ones --pictures names by number, as `character.mjs show` lists them.
 //   node scripts/image.mjs --style-from harbour
 //       names another picture as the one the rest are drawn like
 //   node scripts/image.mjs --list
@@ -38,7 +43,8 @@ const DIRECTORY = join('public', 'images');
 const ASPECTS = ['16:9', '9:16', '1:1', '4:3', '3:4'];
 const LONGEST_PROMPT = 1500;
 const LONGEST_STYLE = 300;
-const TAKES_A_VALUE = ['--aspect', '--like', '--style', '--style-from'];
+const MOST_REFERENCES = 3;
+const TAKES_A_VALUE = ['--aspect', '--character', '--like', '--pictures', '--style', '--style-from'];
 const MIME_TYPES = { '.jpg': 'image/jpeg', '.png': 'image/png', '.webp': 'image/webp' };
 
 // What the provider is told about the picture sent along. Both were tried
@@ -48,6 +54,11 @@ const IN_ITS_STYLE =
   'Drawn in the same style as the reference picture: the same medium, palette and brushwork. A different scene — nothing in the reference picture appears here unless these words ask for it.';
 const THE_SAME_AGAIN =
   'Drawn from the reference picture: the same place and things in the same style, changed only as these words say.';
+// A kept character is the same wording with the place let go of. One picture or
+// several, they are all of the one character.
+const theSameCharacter = count => `The same character as in the reference picture${count > 1 ? 's' : ''}`;
+const drawnFromCharacter = count =>
+  `Drawn from the reference picture${count > 1 ? 's' : ''}: the same character in the same style, changed only as these words say.`;
 
 function fail(message) {
   process.stderr.write(`${message}\n`);
@@ -119,7 +130,8 @@ function outOfStep(name, picture, pictures, style) {
   }
   if (!style || name === style.like) return null;
   if ((picture.asked?.style ?? '') !== (style.words ?? '')) return 'made before this style';
-  if (style.like && !picture.asked?.like && !(style.like in (picture.from ?? {}))) return `not drawn like ${style.like}`;
+  // A character brings their own pictures, and is drawn from those instead.
+  if (style.like && !picture.asked?.like && !picture.asked?.character && !(style.like in (picture.from ?? {}))) return `not drawn like ${style.like}`;
   return null;
 }
 
@@ -142,6 +154,20 @@ async function linkTo(name, pictures) {
   picture.uploaded = { of: stamp, url: reply.url };
   writeJson(MANIFEST, pictures);
   return reply.url;
+}
+
+/** A character the account keeps: their name as kept, their words, and the links of their pictures, in their order. */
+async function keptCharacter(name) {
+  let kept;
+  try {
+    kept = await angles('GET', `/characters/${encodeURIComponent(name)}`);
+  } catch (error) {
+    if (/^HTTP 404\b/.test(error.message)) fail(`The account keeps no character named "${name}". node scripts/character.mjs lists the ones it keeps.`);
+    fail(`angles could not look up the character ${name}: ${error.message}`);
+  }
+  const links = (kept?.pictures ?? []).map(picture => picture?.url).filter(link => /^https:\/\//.test(String(link ?? '')));
+  if (!links.length) fail(`The character ${name} has no picture to be drawn from. Keep them again: node scripts/character.mjs keep ${name} --replace --from <picture>`);
+  return { name: kept.name ?? name, words: String(kept.description ?? '').trim(), links, updatedAt: kept.updatedAt ?? null };
 }
 
 function showStyle(style) {
@@ -181,7 +207,7 @@ async function makePicture(args, pictures) {
   const [name, text] = args.filter((arg, index) => !arg.startsWith('--') && !TAKES_A_VALUE.includes(args[index - 1]));
   if (!name || !text || !/^[A-Za-z0-9_-]+$/.test(name)) {
     fail(
-      `usage: node scripts/image.mjs <name> "<what the picture shows>" [--aspect ${ASPECTS.join('|')}] [--like <name>] [--force]\n       node scripts/image.mjs --style "<how every picture is drawn>"\n       node scripts/image.mjs --style-from <name>\n       node scripts/image.mjs --list`
+      `usage: node scripts/image.mjs <name> "<what the picture shows>" [--aspect ${ASPECTS.join('|')}] [--like <name>] [--character <name> [--pictures 1,4]] [--force]\n       node scripts/image.mjs --style "<how every picture is drawn>"\n       node scripts/image.mjs --style-from <name>\n       node scripts/image.mjs --list`
     );
   }
   const aspect = option(args, '--aspect') ?? '16:9';
@@ -191,20 +217,37 @@ async function makePicture(args, pictures) {
   const like = option(args, '--like');
   if (args.includes('--like') && !like) fail('--like takes the name of a picture this workspace has.');
   if (like === name) fail(`${name} cannot be drawn like itself.`);
+  const character = option(args, '--character');
+  if (args.includes('--character') && !character) fail('--character takes the name of a character the account keeps. node scripts/character.mjs lists them.');
+  if (character && like) fail('--character and --like cannot go together: a picture is drawn from one thing. Keep --character and say the place in words.');
+  // Which of the character's pictures to draw from, by number; left out, the first few.
+  const chosen = args.includes('--pictures') ? (option(args, '--pictures') ?? '').split(',').map(number => Number(number.trim())) : null;
+  if (chosen && !character) fail('--pictures says which of a character\'s pictures to draw from, so it goes with --character.');
+  if (chosen && (!chosen.length || chosen.length > MOST_REFERENCES || new Set(chosen).size !== chosen.length || chosen.some(number => !Number.isInteger(number) || number < 1))) {
+    fail(`--pictures takes up to ${MOST_REFERENCES} of the character's pictures by number, each once: --pictures 1,4. node scripts/character.mjs show ${character} lists them.`);
+  }
   // Drawn like the picture it names, or else like the one the style is fixed to.
-  const source = like ?? (style?.like && style.like !== name ? style.like : null);
+  // A kept character is drawn from their own pictures, and those are all that is sent.
+  const source = character ? null : (like ?? (style?.like && style.like !== name ? style.like : null));
   if (source && !pictures[source]) {
     fail(`There is no picture "${source}" to draw from. ${like ? `There are: ${Object.keys(pictures).join(', ') || 'none yet'}.` : 'Name another with: node scripts/image.mjs --style-from <name>'}`);
   }
   if (source && !existsSync(fileOf(pictures[source]))) fail(`${pictures[source].src} is not in public/. Make ${source} again first.`);
 
-  const prompt = sentences(text, style?.words, source && (like ? THE_SAME_AGAIN : IN_ITS_STYLE));
-  if (prompt.length > LONGEST_PROMPT) {
-    const added = prompt.length > text.trim().length ? ', with the style and what it is drawn from added,' : '';
-    fail(`The description${added} is ${prompt.length} characters; the longest a picture can be asked for in is ${LONGEST_PROMPT}. Shorten it by ${prompt.length - LONGEST_PROMPT}.`);
-  }
+  /** The description as it is sent, refused here when it is too long to be. */
+  const describe = (...parts) => {
+    const prompt = sentences(...parts);
+    if (prompt.length > LONGEST_PROMPT) {
+      const added =
+        prompt.length <= text.trim().length ? '' : character ? `, with ${character}'s own words and the style added,` : ', with the style and what it is drawn from added,';
+      fail(`The description${added} is ${prompt.length} characters; the longest a picture can be asked for in is ${LONGEST_PROMPT}. Shorten it by ${prompt.length - LONGEST_PROMPT}.`);
+    }
+    return prompt;
+  };
+  // A character's words are kept with the account, so theirs is put together once they have been read.
+  let prompt = character ? null : describe(text, style?.words, source && (like ? THE_SAME_AGAIN : IN_ITS_STYLE));
 
-  const asked = { text, aspect, ...(style?.words ? { style: style.words } : {}), ...(like ? { like } : {}) };
+  const asked = { text, aspect, ...(style?.words ? { style: style.words } : {}), ...(like ? { like } : {}), ...(character ? { character } : {}), ...(chosen ? { pictures: chosen } : {}) };
   const from = source ? { [source]: stampOf(pictures[source]) } : {};
   const made = pictures[name];
   const same = made && JSON.stringify(made.asked) === JSON.stringify(asked) && JSON.stringify(made.from ?? {}) === JSON.stringify(from);
@@ -216,7 +259,16 @@ async function makePicture(args, pictures) {
   if (!process.env.ANGLES_API_KEY) {
     fail('ANGLES_API_KEY is not set. Pictures are made through an Angles account; without one, use a picture the user has, or draw the scene in code.');
   }
-  const references = source ? [await linkTo(source, pictures)] : [];
+  const kept = character ? await keptCharacter(character) : null;
+  // A picture is drawn from a few at most: the ones asked for, or the first few the character has.
+  const numbers = kept ? (chosen ?? kept.links.slice(0, MOST_REFERENCES).map((link, index) => index + 1)) : [];
+  const absent = numbers.filter(number => number > (kept?.links.length ?? 0));
+  if (absent.length) fail(`${kept.name} has ${kept.links.length} ${kept.links.length === 1 ? 'picture' : 'pictures'}; there is no picture ${absent.join(' or ')}. node scripts/character.mjs show ${kept.name} lists them.`);
+  if (kept) {
+    const count = numbers.length;
+    prompt = describe(kept.words ? `${theSameCharacter(count)}: ${kept.words}` : theSameCharacter(count), text, style?.words, drawnFromCharacter(count));
+  }
+  const references = kept ? numbers.map(number => kept.links[number - 1]) : source ? [await linkTo(source, pictures)] : [];
   let reply;
   try {
     reply = await angles('POST', '/images', { prompt, aspect, ...(references.length ? { references } : {}) });
@@ -240,9 +292,12 @@ async function makePicture(args, pictures) {
     model: reply.model,
     asked,
     ...(source ? { from } : {}),
+    ...(kept ? { character: { name: kept.name, updatedAt: kept.updatedAt } } : {}),
   };
   writeJson(MANIFEST, pictures);
-  const drawn = source ? `, ${like ? 'drawn from' : 'drawn like'} ${source}` : '';
+  // Said only when some of theirs were left out, which is when it could have been otherwise.
+  const which = kept && kept.links.length > numbers.length ? ` (${numbers.length === 1 ? 'picture' : 'pictures'} ${numbers.join(', ')} of ${kept.links.length})` : '';
+  const drawn = kept ? `, drawn from the character ${kept.name}${which}` : source ? `, ${like ? 'drawn from' : 'drawn like'} ${source}` : '';
   const { charged, balance } = reply.credits ?? {};
   const spent = Number.isFinite(charged) && Number.isFinite(balance) ? ` ${charged} ${charged === 1 ? 'credit' : 'credits'}; ${balance} left.` : '';
   process.stdout.write(`${name}: ${pictures[name].src}, ${size.width}×${size.height}, made by ${reply.model}${drawn}.${spent}\n`);

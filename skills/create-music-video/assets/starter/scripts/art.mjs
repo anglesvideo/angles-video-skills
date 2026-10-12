@@ -31,6 +31,19 @@
 // both have a dark stage's defaults, and a shot with "room": false describes
 // its own surroundings.
 //
+// A singer the account already keeps — made for an earlier song in another
+// workspace, and kept with scripts/character.mjs — needs no candidates:
+//
+//   { "character": "dev-night", "shots": [ … ] }
+//
+// Every shot is then drawn from that character's kept pictures, with their
+// kept words in place of "who". A character can have more pictures than a shot
+// is drawn from: it is the first three unless the shot says which, by number,
+// as `node scripts/character.mjs show <name>` lists them —
+// { "name": "back", "words": "…", "pictures": [4, 1] }. To keep the singer
+// chosen here for the next workspace:
+// node scripts/character.mjs keep <singer> "<who>" --from <singer>-<chosen>
+//
 // Pictures are named <singer>-<name>, land in public/images/ and are listed in
 // src/images.json. Each is one call to scripts/image.mjs, through the user's
 // Angles account (ANGLES_API_KEY). A name already made from the same words is
@@ -78,6 +91,23 @@ let wanted;
 if (flags.includes('--candidates')) {
   if (!candidates.length) fail(`${file} has no "candidates".`);
   wanted = candidates.map(candidate => ({ name: candidate.name, words: `${art.sheet ?? SHEET} ${candidate.words.trim()}`, aspect: '3:4' }));
+} else if (art.character) {
+  // Somebody the account keeps: their pictures and their words are with the account, and scripts/image.mjs reads them.
+  if (typeof art.character !== 'string' || !art.character.trim()) fail(`"character" in ${file} is the name of a character the account keeps: node scripts/character.mjs lists them.`);
+  if (!shots.length) fail(`${file} has no "shots".`);
+  const unknown = asked.filter(name => !shots.some(shot => shot.name === name));
+  if (unknown.length) fail(`No shot called ${unknown.join(', ')}. The shots are: ${shots.map(shot => shot.name).join(', ')}.`);
+  const misnumbered = shots.filter(shot => shot.pictures !== undefined && !(Array.isArray(shot.pictures) && shot.pictures.length >= 1 && shot.pictures.length <= 3 && shot.pictures.every(number => Number.isInteger(number) && number >= 1)));
+  if (misnumbered.length) fail(`"pictures" in a shot is up to three of the character's pictures by number, like [4, 1]: ${misnumbered.map(shot => shot.name).join(', ')}.`);
+  wanted = shots
+    .filter(shot => !asked.length || asked.includes(shot.name))
+    .map(shot => ({
+      name: shot.name,
+      words: `${shot.words.trim()}${shot.room === false ? '' : ` ${art.room ?? ROOM}`}`,
+      aspect: shot.aspect ?? '16:9',
+      character: art.character.trim(),
+      ...(shot.pictures ? { pictures: shot.pictures } : {}),
+    }));
 } else {
   const chosen = candidates.find(candidate => candidate.name === art.chosen);
   if (!art.chosen) fail(`Nobody has been chosen yet. Make the candidates (--candidates), show them to the user, and write the one they pick into "chosen" in ${file}.`);
@@ -103,7 +133,14 @@ const long = wanted.filter(picture => picture.words.length > LONGEST_PROMPT);
 if (long.length) fail(`Too many words: ${long.map(picture => `${picture.name} is ${picture.words.length} characters`).join(', ')}. A picture is described in at most ${LONGEST_PROMPT}; shorten "who" or the shot.`);
 
 if (flags.includes('--dry-run')) {
-  for (const picture of wanted) process.stdout.write(`\n— ${singer}-${picture.name} (${picture.aspect}${picture.like ? `, drawn from ${picture.like}` : ''}, ${picture.words.length} characters)\n${picture.words}\n`);
+  for (const picture of wanted) {
+    const from = picture.like
+      ? `, drawn from ${picture.like}`
+      : picture.character
+        ? `, drawn from the character ${picture.character}${picture.pictures ? ` (pictures ${picture.pictures.join(', ')})` : ''}, whose kept words go in front`
+        : '';
+    process.stdout.write(`\n— ${singer}-${picture.name} (${picture.aspect}${from}, ${picture.words.length} characters)\n${picture.words}\n`);
+  }
   process.exit(0);
 }
 
@@ -111,7 +148,7 @@ for (const picture of wanted) {
   process.stdout.write(`\n— ${picture.name}\n`);
   const result = spawnSync(
     process.execPath,
-    [fileURLToPath(new URL('./image.mjs', import.meta.url)), `${singer}-${picture.name}`, picture.words, '--aspect', picture.aspect, ...(picture.like ? ['--like', picture.like] : []), ...(flags.includes('--force') ? ['--force'] : [])],
+    [fileURLToPath(new URL('./image.mjs', import.meta.url)), `${singer}-${picture.name}`, picture.words, '--aspect', picture.aspect, ...(picture.like ? ['--like', picture.like] : []), ...(picture.character ? ['--character', picture.character] : []), ...(picture.pictures ? ['--pictures', picture.pictures.join(',')] : []), ...(flags.includes('--force') ? ['--force'] : [])],
     { stdio: 'inherit' }
   );
   if (result.status !== 0) {

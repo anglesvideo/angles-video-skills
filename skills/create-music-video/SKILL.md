@@ -162,9 +162,12 @@ Skip this when the user wants lights and words only, or has no key and no pictur
 
 A singer here is still pictures of one drawn person, cut to the beat. First find out who — then let the user see before they decide, because **nobody can choose a face from a description.**
 
+Run `node scripts/character.mjs` before making anybody: it lists the characters the account already keeps. If the user wants one of them — the singer of an earlier song, made in another workspace — there is nobody to choose. Write `{ "character": "<their name>", "shots": [ … ] }` as `src/<singer>.art.json` and go straight to the shots; each is drawn from that character's kept pictures, with their kept words in front. A kept character can have up to ten pictures and a shot is drawn from three: the first three, unless the shot names others with `"pictures": [4, 1]` — `node scripts/character.mjs show <their name>` lists them by number.
+
 - **Describe what is plain about them.** A model asked for "a singer" draws an idol: young, symmetrical, well dressed, a guitar. If the user wants a programmer, write the programmer feature by feature — the slouch, the hoodie gone bobbly, the mug — and say outright that they are not handsome and not stylish. Leave out the instrument unless they play one.
 - **Make three or four candidates that really differ**, and show them together. Write them into `src/<singer>.art.json`, run `node scripts/art.mjs <singer> --candidates`, open each picture yourself first, and give the user all of them side by side. Each candidate and each shot is one picture, 5 credits. If they turn down the whole set, ask what was wrong and write a new set — do not argue for one.
 - **Write the name they pick into `"chosen"`**, and the shots under it: one for each thing the lyrics have the singer do. Eight to twelve is enough for ninety seconds. Put them in the order the video needs them most; then `node scripts/art.mjs <singer>`.
+- **Keep the one they picked**, once the shots have come back as the same person: `node scripts/character.mjs keep <singer> "<who>" --from <singer>-<chosen>`. It costs nothing, and the next workspace — another song, or a video of another kind — draws the same singer by name instead of a new one. The user sees them at angles.video/library.
 - **Open every picture before it goes in.** They come back wrong in ways the words did not ask for: a full figure where a close-up was asked; a close-up drawn as a photograph of a real man when the rest are cartoons; a stray mark in a crowd that reads as a letter or a logo; clothes dirtier than described. Say again, in the words, the thing that went wrong, and make it again. A mark the size of a thumbnail can be painted out instead.
 - **Never a person who exists**, and nothing drawn so that a viewer would take it for a photograph of one. No words, letters or logos in a picture: anything written is set in type by you.
 
@@ -227,12 +230,13 @@ This writes `out/<song>.final.mp4` at publishing loudness. Give the user:
 - that the song and the singer were made by models, and that **whether a made song may be used commercially is set by the terms of the service that made it** — say so, and do not promise it for them;
 - how to change it: `src/<song>.lyrics.txt` holds the words, `src/<song>.tsx` the lights and the cuts, `src/<singer>.art.json` the pictures.
 
-The video is rendered on this machine. What leaves it: the lyrics and the style, to the service that sings them; the description of each picture, and the reference picture it is drawn from, to the service that draws it. The listener, when it is installed, runs here and sends nothing. Reading where an audience talks fetches public pages.
+The video is rendered on this machine. What leaves it: the lyrics and the style, to the service that sings them; the description of each picture, and the reference picture it is drawn from, to the service that draws it; a singer who is kept, as their reference pictures and the words about them, to the user's Angles account until they delete them. The listener, when it is installed, runs here and sends nothing. Reading where an audience talks fetches public pages.
 
 ## The next song
 
 A workspace with a singer in it is an act. For the next one:
 
 - Keep the stage and the singer. A new song gets its own phrases, lyrics, measurements and `.tsx`; new shots are added to the same `art.json` and drawn from the same reference.
+- In a new workspace the singer comes from the account instead: `"character"` in `art.json`, as step 8 says. The stage does not travel that way; copy `src/` across if the act should look the same.
 - Find the words again. What this audience said last season is not what it says now.
 - Do not reuse a cue sheet. The lights are written from this song's bars, and no two songs stop in the same place.

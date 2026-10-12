@@ -81,6 +81,22 @@ One request is one picture, and it can take half a minute. The reply is the file
 
 A reference is a picture to draw from, given as the `url` that `POST /assets` returned when it was uploaded; any other link returns `400` with `IMAGE_REFERENCE_NOT_UPLOADED`. What is taken from it is whatever the prompt says to take. Told to keep the style and draw a different scene, the new picture comes back in the same medium and palette with nothing of the reference in it — which words alone do not manage from one request to the next. Told to draw the same place again, it keeps the place and its things and changes what the prompt changes. `scripts/image.mjs` does both: `--style` holds every picture in a workspace to the first one made, and `--like` draws one picture from another.
 
+## Characters an account keeps
+
+A character drawn for one video is the same person in the next only if the picture they are drawn from, and the words that go with it, can be reached from there. An account keeps them; `scripts/character.mjs` in the workspace calls this, and `scripts/image.mjs --character` draws from what is kept, so there is no client command for it.
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /characters` | Everyone the account keeps: `{ characters: [...], limits: { pictures, picturesPerCharacter } }`. |
+| `GET /characters/:name` | One of them: `{ id, name, description, pictures: [{ url, width, height }], createdAt, updatedAt }`. |
+| `POST /characters` | Keep a new one. Multipart: `name`, `description` (up to 800 characters), and one to ten `files` — JPEG, PNG or WebP, up to 20MB each. |
+| `PUT /characters/:name` | Change one. Multipart, every part optional: `name` renames it, `description` replaces its words, `files` replace its pictures. `keep`, a JSON array of picture links, says which of the pictures it has stay and in what order, with any `files` added after them. |
+| `DELETE /characters/:name` | Delete one, and its pictures. |
+
+A name is up to 40 letters, digits, hyphens and underscores, with no spaces, and is matched without regard to case. `POST` with a name already kept returns `409` with `CHARACTER_NAME_TAKEN` rather than replacing what has it; a name nobody has returns `404` with `CHARACTER_NOT_FOUND`. Every character has at least one picture and at most ten. An account keeps up to 100 pictures over all of its characters, however many characters that is; a save that would pass that returns `400` with `CHARACTER_PICTURE_LIMIT_REACHED`. Keeping costs nothing.
+
+A kept picture's `url` is one `POST /images` takes as a reference. To draw a character again, send up to three of their pictures as `references` and begin the prompt with their `description`; that is all `--character` does, with the first three unless `--pictures` names others. Their order is the owner's to set, so the first is the one meant to be drawn from. The same characters are on the account's library page on the site, where a person can add, reorder and change them.
+
 ## Presenter videos
 
 A presenter video is voiced by a person on camera instead of the synthesised voice, with their picture in a round window over the scenes. The person reads the script one sentence at a time, and each sentence is one scene.

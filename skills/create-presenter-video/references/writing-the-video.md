@@ -257,6 +257,20 @@ The style is one sentence: the medium, the palette from the look, the light, wha
 
 `--like <name>` is for the same place or thing again — the harbour at dawn, the desk with the lamp out. It keeps what the words do not change. Without it, a picture shares the style and nothing else.
 
+A character who has to be the same person in the next project is kept with the account, not with this workspace:
+
+```bash
+node scripts/character.mjs                                  # the characters the account keeps
+node scripts/character.mjs keep keeper "A lighthouse keeper of about sixty: a grey beard, a navy fisherman's jumper, a stoop. Never young, never in uniform."
+node scripts/image.mjs stairs "Climbing a spiral stair with a lantern, seen from above" --character keeper
+```
+
+`keep` takes the picture of that name made here — a full figure on a plain background is what a character is best drawn from — or the pictures named with `--from`, and the words that go with them: who they are, and what they must never be drawn as, which a picture does not hold. `--character` then draws them into a new picture, in this workspace or any other on the account: their pictures and their words go along, so the description says only what they are doing and where.
+
+A character can have up to ten pictures — a side view, a close face, another outfit, added with `keep <name> --add --from <picture>` — and a new picture is drawn from three of them at most. Left alone that is the first three, so the first is the one that says most. `node scripts/character.mjs show <name>` lists them by number; `--pictures 1,4` on `image.mjs` picks the ones that suit a shot: the back view for a figure seen from behind, the close face for a close-up.
+
+Look at what the account keeps before making somebody new, and ask the user before changing (`--replace`) or deleting (`remove`) one: other projects draw from the same character. Keeping costs nothing; an account keeps a hundred pictures over all of its characters. The user sees the same characters at angles.video/library, and can add to, reorder or change one there.
+
 Each picture is written to `public/images/`, large enough to fill the frame and be pushed in on, and recorded in `src/images.json` with its size and the words it was made from. The shapes are `16:9`, `9:16`, `1:1`, `4:3` and `3:4`. A picture costs 5 credits from the account's balance and every call says what is left, so decide which lines need one before making any. The same name with the same words is not made twice; new words under the same name replace the picture.
 
 `node scripts/image.mjs --list` shows which pictures no longer match — made before the style was set, or drawn from a picture that has since been made again. Running such a picture's command again puts it right. New style words start the style over, and `--style-from <name>` names a different picture for the rest to be drawn like. The style is kept in `src/images.style.json` and belongs to the series, like the look.
@@ -267,7 +281,7 @@ Each picture is written to `public/images/`, large enough to fill the frame and 
 - **Open every picture before it goes into a scene.** They come back with a sixth finger, with lettering that says nothing, with the wrong object. Make it again with plainer words, or do without it.
 - **Say it is a made picture wherever a viewer could take it for a real one.** The record carries `generated: true` so a scene can.
 
-Only pictures this script made are ever sent to be drawn from, never the user's own files; one that is sent goes to their Angles account's storage once.
+Only pictures this script made are ever sent to be drawn from, never the user's own files; one that is sent goes to their Angles account's storage once. A character is kept from the pictures you name, and stays there until it is deleted: keep one that was drawn or made, never a photograph of a person.
 
 Use a picture as any other in `public/`, and give it something to do — a slow push in, a crop that travels while the line is spoken:
 

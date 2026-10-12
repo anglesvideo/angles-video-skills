@@ -386,3 +386,146 @@ test('says so when the picture to draw from cannot be sent, and sends nothing el
     }
   );
 });
+
+// ——— A character the account keeps ———
+
+const WHO = 'An ordinary programmer of about twenty-eight, tall, thin and slouching. Not handsome, not stylish.';
+const keptCharacter = (pictures = ['https://cdn.test/characters/sheet.jpg']) => ({
+  status: 200,
+  id: 'asset-1',
+  name: 'dev-night',
+  description: WHO,
+  pictures: pictures.map(url => ({ url, width: 1728, height: 2304 })),
+  updatedAt: '2026-10-10T08:00:00.000Z',
+});
+
+/** Angles with a character kept: asked for by name, in any case, and for nobody else. */
+function casting(character = keptCharacter()) {
+  const draws = studio();
+  return request => {
+    if (request.url.startsWith('/characters/')) {
+      return decodeURIComponent(request.url.slice('/characters/'.length)).toLowerCase() === 'dev-night'
+        ? character
+        : { status: 404, message: 'Not Found', details: { code: 'CHARACTER_NOT_FOUND', message: 'This account keeps no character named "nobody".' } };
+    }
+    return draws(request);
+  };
+}
+
+test('--character draws a kept character again: their pictures and their words go along', async () => {
+  await withAngles(casting(), async ({ directory, env, requests }) => {
+    const desk = await run(directory, ['desk', 'At a desk at night, lit by one monitor, a mug in one hand', '--character', 'dev-night'], env);
+    assert.equal(desk.code, 0, desk.stderr);
+    assert.deepEqual(requests.map(request => `${request.method} ${request.url}`), ['GET /characters/dev-night', 'POST /images']);
+    assert.equal(requests[0].headers.authorization, `Bearer ${testKey}`);
+    assert.deepEqual(requests[1].body, {
+      prompt: `The same character as in the reference picture: ${WHO} At a desk at night, lit by one monitor, a mug in one hand. Drawn from the reference picture: the same character in the same style, changed only as these words say.`,
+      aspect: '16:9',
+      references: ['https://cdn.test/characters/sheet.jpg'],
+    });
+    assert.match(desk.stdout, /desk: images\/desk\.jpg, .* drawn from the character dev-night\. 5 credits; 195 left\./);
+
+    const pictures = await read(directory, 'images.json');
+    assert.deepEqual(pictures.desk.asked, { text: 'At a desk at night, lit by one monitor, a mug in one hand', aspect: '16:9', character: 'dev-night' });
+    assert.deepEqual(pictures.desk.character, { name: 'dev-night', updatedAt: '2026-10-10T08:00:00.000Z' });
+    assert.equal(pictures.desk.from, undefined);
+
+    // The same picture of them is not made twice, and is not looked up to find that out.
+    const again = await run(directory, ['desk', 'At a desk at night, lit by one monitor, a mug in one hand', '--character', 'dev-night'], env);
+    assert.match(again.stdout, /desk is already made/);
+    assert.equal(requests.length, 2);
+    assert.doesNotMatch(desk.stdout + again.stdout, new RegExp(testKey));
+  });
+});
+
+test('a character with several pictures is drawn from all of them, and from theirs alone under a style', async () => {
+  const sheets = ['https://cdn.test/characters/front.jpg', 'https://cdn.test/characters/side.png'];
+  await withAngles(casting(keptCharacter(sheets)), async ({ directory, env, requests }) => {
+    await run(directory, ['--style', STYLE], env);
+    await run(directory, ['harbour', 'A harbour at night'], env);
+    const quay = await run(directory, ['quay', 'Standing on the quay, seen from behind', '--character', 'Dev-Night'], env);
+    assert.equal(quay.code, 0, quay.stderr);
+
+    // The style's own picture is not sent: its words are, and the character's pictures.
+    assert.deepEqual(requests.map(request => request.url), ['/images', '/characters/Dev-Night', '/images']);
+    assert.deepEqual(requests[2].body.references, sheets);
+    assert.equal(
+      requests[2].body.prompt,
+      `The same character as in the reference pictures: ${WHO} Standing on the quay, seen from behind. ${STYLE}. Drawn from the reference pictures: the same character in the same style, changed only as these words say.`
+    );
+    assert.doesNotMatch(requests[2].body.prompt, IN_ITS_STYLE);
+
+    const listed = await run(directory, ['--list'], env);
+    assert.doesNotMatch(listed.stdout, /quay .*\[/);
+  });
+});
+
+test('--character asks for no picture when there is nobody to draw, or two things to draw from', async () => {
+  await withAngles(casting(), async ({ directory, env, requests }) => {
+    const nobody = await run(directory, ['desk', 'At a desk', '--character', 'nobody'], env);
+    assert.equal(nobody.code, 1);
+    assert.match(nobody.stderr, /The account keeps no character named "nobody"\. node scripts\/character\.mjs lists the ones it keeps\./);
+    assert.deepEqual(requests.map(request => request.url), ['/characters/nobody']);
+
+    const nameless = await run(directory, ['desk', 'At a desk', '--character'], env);
+    assert.match(nameless.stderr, /--character takes the name of a character the account keeps/);
+    const both = await run(directory, ['desk', 'At a desk', '--character', 'dev-night', '--like', 'harbour'], env);
+    assert.match(both.stderr, /--character and --like cannot go together/);
+    // Too long once their words are added: found after they are read, before anything is paid for.
+    const long = await run(directory, ['desk', 'a'.repeat(1400), '--character', 'dev-night'], env);
+    assert.match(long.stderr, /The description, with dev-night's own words and the style added, is \d+ characters/);
+    for (const result of [nameless, both, long]) assert.equal(result.code, 1);
+    assert.deepEqual(requests.map(request => request.url), ['/characters/nobody', '/characters/dev-night']);
+    assert.equal(existsSync(join(directory, 'src', 'images.json')), false);
+  });
+});
+
+test('a character with more pictures than one is drawn from gives the first three, or the ones --pictures names', async () => {
+  const sheets = Array.from({ length: 5 }, (_, index) => `https://cdn.test/characters/${index + 1}.jpg`);
+  await withAngles(casting(keptCharacter(sheets)), async ({ directory, env, requests }) => {
+    const desk = await run(directory, ['desk', 'At a desk at night', '--character', 'dev-night'], env);
+    assert.equal(desk.code, 0, desk.stderr);
+    assert.deepEqual(requests[1].body.references, sheets.slice(0, 3));
+    assert.match(requests[1].body.prompt, /^The same character as in the reference pictures: /);
+    assert.match(desk.stdout, /drawn from the character dev-night \(pictures 1, 2, 3 of 5\)\./);
+
+    const coat = await run(directory, ['coat', 'In a long coat, seen from behind', '--character', 'dev-night', '--pictures', '5, 2'], env);
+    assert.equal(coat.code, 0, coat.stderr);
+    // In the order asked for: the first named is the one that leads.
+    assert.deepEqual(requests[3].body.references, [sheets[4], sheets[1]]);
+    assert.match(coat.stdout, /drawn from the character dev-night \(pictures 5, 2 of 5\)\./);
+    const one = await run(directory, ['face', 'A close face, looking up', '--character', 'dev-night', '--pictures', '4'], env);
+    assert.deepEqual(requests[5].body.references, [sheets[3]]);
+    assert.match(requests[5].body.prompt, /^The same character as in the reference picture: .* Drawn from the reference picture: the same character/);
+    assert.match(one.stdout, /\(picture 4 of 5\)/);
+
+    const pictures = await read(directory, 'images.json');
+    assert.equal(pictures.desk.asked.pictures, undefined);
+    assert.deepEqual(pictures.coat.asked, { text: 'In a long coat, seen from behind', aspect: '16:9', character: 'dev-night', pictures: [5, 2] });
+
+    // Other pictures of theirs are another picture: the same words are made again, and the same choice is not.
+    const same = await run(directory, ['coat', 'In a long coat, seen from behind', '--character', 'dev-night', '--pictures', '5,2'], env);
+    assert.match(same.stdout, /coat is already made/);
+    await run(directory, ['coat', 'In a long coat, seen from behind', '--character', 'dev-night', '--pictures', '1'], env);
+    assert.deepEqual(requests[7].body.references, [sheets[0]]);
+    assert.equal(requests.length, 8);
+  });
+});
+
+test('--pictures asks for no picture when it names what a character does not have', async () => {
+  await withAngles(casting(keptCharacter(['https://cdn.test/characters/1.jpg', 'https://cdn.test/characters/2.jpg'])), async ({ directory, env, requests }) => {
+    const alone = await run(directory, ['desk', 'At a desk', '--pictures', '1'], env);
+    assert.match(alone.stderr, /--pictures says which of a character's pictures to draw from, so it goes with --character\./);
+    for (const numbers of ['', '0', '1,1', '1,2,3,4', 'two', '1.5']) {
+      const wrong = await run(directory, ['desk', 'At a desk', '--character', 'dev-night', '--pictures', ...(numbers ? [numbers] : [])], env);
+      assert.equal(wrong.code, 1, numbers);
+      assert.match(wrong.stderr, /--pictures takes up to 3 of the character's pictures by number, each once: --pictures 1,4\. node scripts\/character\.mjs show dev-night lists them\./);
+    }
+    assert.equal(requests.length, 0);
+
+    const absent = await run(directory, ['desk', 'At a desk', '--character', 'dev-night', '--pictures', '2,3'], env);
+    assert.equal(absent.code, 1);
+    assert.match(absent.stderr, /dev-night has 2 pictures; there is no picture 3\. node scripts\/character\.mjs show dev-night lists them\./);
+    assert.deepEqual(requests.map(request => request.url), ['/characters/dev-night']);
+  });
+});

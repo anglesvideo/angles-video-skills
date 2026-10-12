@@ -164,6 +164,36 @@ test('a singer is chosen from candidates before any shot is drawn', async () => 
   }
 });
 
+test('a singer the account keeps is drawn from without candidates', async () => {
+  const directory = await workspace({ 'src/dev.art.json': { character: 'dev-night', shots: ART.shots } });
+  try {
+    const shots = await node(directory, 'art.mjs', ['dev', '--dry-run']);
+    assert.equal(shots.code, 0, shots.stderr);
+    // Who they are is kept with the account, so the shot says only what is different, and where.
+    assert.match(shots.stdout, /— dev-refuse \(16:9, drawn from the character dev-night, whose kept words go in front, \d+ characters\)\nNow a medium shot: both open palms held out toward the camera\. A dark concert stage/);
+    assert.match(shots.stdout.slice(shots.stdout.indexOf('— dev-empty')), /every seat is empty\.\n/);
+    assert.match((await node(directory, 'art.mjs', ['dev', 'nothing'])).stderr, /No shot called nothing\. The shots are: refuse, empty\./);
+
+    // Made through the account, which is not there: it stops at the first one and says where.
+    const made = await node(directory, 'art.mjs', ['dev']);
+    assert.equal(made.code, 1);
+    assert.match(made.stderr, /ANGLES_API_KEY is not set[\s\S]*Stopped at refuse/);
+
+    // A shot can say which of their pictures it is drawn from.
+    await writeFile(join(directory, 'src', 'dev.art.json'), JSON.stringify({ character: 'dev-night', shots: [{ ...ART.shots[0], pictures: [4, 1] }, ART.shots[1]] }));
+    const picked = await node(directory, 'art.mjs', ['dev', '--dry-run']);
+    assert.match(picked.stdout, /— dev-refuse \(16:9, drawn from the character dev-night \(pictures 4, 1\), whose kept words go in front,/);
+    assert.match(picked.stdout, /— dev-empty \(16:9, drawn from the character dev-night, whose kept words go in front,/);
+    await writeFile(join(directory, 'src', 'dev.art.json'), JSON.stringify({ character: 'dev-night', shots: [{ ...ART.shots[0], pictures: [1, 2, 3, 4] }] }));
+    assert.match((await node(directory, 'art.mjs', ['dev', '--dry-run'])).stderr, /"pictures" in a shot is up to three of the character's pictures by number, like \[4, 1\]: refuse\./);
+
+    await writeFile(join(directory, 'src', 'dev.art.json'), JSON.stringify({ character: 'dev-night' }));
+    assert.match((await node(directory, 'art.mjs', ['dev'])).stderr, /has no "shots"/);
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test('every shot is drawn from the one who was chosen, in the same words', async () => {
   const chosen = { ...ART, chosen: 'night' };
   const directory = await workspace({ 'src/dev.art.json': chosen, 'src/images.json': { 'dev-night': { src: 'images/dev-night.jpg', width: 1728, height: 2304 } } });
