@@ -1,0 +1,4 @@
+interface:
+  display_name: "Create Template Video"
+  short_description: "Pick a selling angle and an Angles template; the video is rendered in the cloud"
+  default_prompt: "Use $create-template-video to make a template video for this repository."

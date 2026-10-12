@@ -21,7 +21,7 @@ Authenticate with `Authorization: Bearer $ANGLES_API_KEY`. Never place the key i
 
 `from-url` is for a product that can only be named by its address. Angles reads the page with the same importer the browser uses, writes the brief from it, and returns the concepts plus a `source` block carrying the `url`, the `productName` it settled on, the `targetAudience` it read, and any `productImages` it found on the page. Those screenshots are reported, not attached: pass the ones worth using to `render` as `productImages`. Fields sent in the request win over anything the page said, so an audience the caller knows is not overruled by vague marketing copy. A page that renders its content entirely in JavaScript is refused with `PAGE_UNREADABLE` rather than guessed at — describe the product with `concepts` instead.
 
-Developer templates draw a terminal, a code window, and a list of run steps, and the planner is forbidden from writing what goes in them — a command invented for a video is a command that does not run. Supply `codeSample` (up to 600 characters, optionally with `codeLanguage`) and `runSteps` (up to 6, in order) and they are printed verbatim. Leave them out and those scenes fall back to visible placeholders — `// Add your real example`, `[DRAFT] Run the workflow` — which is the right prompt for someone editing in the browser and the wrong thing to publish straight from an API. `concepts` and `from-url` both accept them; a landing page never carries a working command, so on the URL path the caller's copy is the only source of one. Send only what is true: a sample that does not run is worse than the placeholder, which at least says it needs filling in.
+Developer templates draw a terminal, a code window, and a list of run steps, and the planner is forbidden from writing what goes in them — a command invented for a video is a command that does not run. Supply `codeSample` (up to 600 characters, optionally with `codeLanguage`) and `runSteps` (up to 6, in order) and they are printed verbatim. Leave them out and those scenes are rendered as the template's plain text page (see [Draft content](#draft-content)). `concepts` and `from-url` both accept them; a landing page never carries a working command, so on the URL path the caller's copy is the only source of one. Send only what is true: a sample that does not run is worse than a text page.
 
 `productUrl` is where the finished video sends its viewer. Several templates close on a full-frame destination — the one shot in a launch video that exists to be read and typed — and no stage is allowed to invent one: the planner may not write facts, and a repository URL is a different place to send someone. Send the product's public address and it is printed the way a person reads it aloud, without the scheme or a trailing slash. Leave it out and those plates fall back to the brand name, which is true but is not somewhere to go. `from-url` sets it from the page it read, so it is only worth sending on `concepts`.
 
@@ -31,9 +31,28 @@ Developer templates draw a terminal, a code window, and a list of run steps, and
 
 Each template carries a `media` block answering whether uploads reach the finished video: `acceptsClips`, `acceptsImages`, `minimumClips`, and `minimumImages`. It is derived from the routing the renderer runs, so it is the field to filter on. The neighbouring `imageSupport` and `videoSupport` describe scene slots for hand editing in the browser and answer a different question — several templates publish image slots but route no uploaded image at render time.
 
-`status` responses may include `sceneWarnings`: an array of `{ code, message, sceneIndex }` describing what the renderer had to change to fit the template. `scene-content-contract-fallback` means a scene was downgraded to a plain text layout because its required content was missing, which is the usual reason an uploaded image or clip does not appear in the finished video. `scene-content-contract-missing` names the specific `layoutPayload` field that was absent. The field is omitted when the plan needed no changes.
+`status` responses may include `sceneWarnings`: an array of `{ code, message, sceneIndex }` describing what the renderer had to change to fit the template. `scene-content-contract-fallback` means a scene was rendered as the template's plain text page instead of the layout it was planned as, which is the usual reason an uploaded image or clip does not appear in the finished video. Its message ends with the reason and the `layoutPayload` slots concerned: `Missing layoutPayload: …` for a slot that was empty, `Only draft content for layoutPayload: …` for one that held nothing real. `scene-content-contract-missing` names a required slot that was absent. The field is omitted when the plan needed no changes.
 
 `concepts` and `status` responses may include `launchCopy`, a publishing pack derived from the selected video's title, hook, selling angle, caption, CTA, and product context. It includes a short caption, LinkedIn, X, TikTok, and YouTube Shorts copy, pinned-comment text, thumbnail text options, hashtags, optional hook alternatives, and `source` (`ai` or `fallback`). Use it directly when presenting the final launch asset.
+
+## Draft content
+
+A template's scenes have slots, and a slot nobody filled is given a draft so that someone editing in the browser has something to replace: `// Add your real example` in a code window, `[DRAFT] Run the workflow` in a terminal, an illustrative `30%`, a quote from "Sample customer". A render started through this API is published as it comes back, with nobody in between, so `preview` and `render` refuse draft content:
+
+- A scene whose own slots hold only a draft is rendered as the template's plain text page — the scene's sentence, in the template's look — and reported as `scene-content-contract-fallback` with `Only draft content for layoutPayload: …` naming the slots. `preview` reports it before anything is charged, and marks the scene with `downgradedFrom`.
+- A draft caption beside real content — the source line under a measured figure — is left out and the scene kept.
+- Plain labels are not drafts: "Before" and "After" over two descriptions, a unit, "Learn more".
+
+What fills a slot is decided when the concepts are generated, so a scene reported here is fixed by generating new concepts with the missing material, not by rendering again:
+
+| Slots named | What fills them |
+| --- | --- |
+| `codeSnippet`, `logSteps` | `codeSample` (with `codeLanguage`) and `runSteps` |
+| `chartValue`, `chartValues`, `repoStars`, `repoForks`, `contributionDays`, release and contributor figures | `repositoryUrl`, for a public repository |
+| `featureGridItems`, `flowSteps`, `criteria`, `beforeBody`, `afterBody`, `tagline`, `question`, `recommendation` | Written by Angles from the summary. Reported as draft, the writing pass did not finish: run `concepts` again |
+| `testimonialBody` and the other quote fields, `pricing…` | Nothing this API accepts. They can be filled in the browser editor from `editUrl` |
+
+The browser editor still shows drafts, as prompts for whoever is editing, and an export started there prints what the editor shows.
 
 ## Credits
 

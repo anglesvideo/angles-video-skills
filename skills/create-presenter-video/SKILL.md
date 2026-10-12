@@ -1,6 +1,6 @@
 ---
 name: create-presenter-video
-description: Make a product video presented by the user on camera, written and rendered on their machine. Use when a user wants to appear in their own product video, record a voiceover or talking-head video, read a script on camera, or asks for a presenter, founder, or face-to-camera video of a repository or product page. Write the script from the product's real facts, let the user reword it until it sounds like them, guide them to record one video file per sentence, then design the video yourself in Remotion — their takes in a window over scenes built for each sentence — render it locally, check the result, and return a finished mp4. Recordings stay on the user's machine and no template is involved. Falls back to an Angles-hosted template render only when asked or when local rendering is impossible. For a synthesised voice, use create-launch-video; for a screen recording, use create-video-from-recording.
+description: Make a product video presented by the user on camera, written and rendered on their machine. Use when a user wants to appear in their own product video, record a voiceover or talking-head video, read a script on camera, or asks for a presenter, founder, or face-to-camera video of a repository or product page. Write the script from the product's real facts, let the user reword it until it sounds like them, guide them to record one video file per sentence, then design the video yourself in Remotion — their takes in a window over scenes built for each sentence — render it locally, check the result, and return a finished mp4. Recordings stay on the user's machine and no template is involved. For a synthesised voice, use create-launch-video; for a screen recording, use create-video-from-recording; for a presenter video made from an Angles template and rendered in the cloud, use create-template-video.
 ---
 
 # Create a presenter video
@@ -19,7 +19,7 @@ Tell the user what they are signing up for before any work is done:
 - Their recordings stay on this machine. They are not uploaded, and the workspace keeps them out of git.
 - To check the finished video you will look at still frames of it, and those frames include their face.
 
-Take the hosted path in [references/hosted-render.md](references/hosted-render.md) instead only when the user asks for an Angles-hosted or template video, or when the machine cannot render locally. That path uploads each take, so say so before taking it.
+When the user asks for a template video or one rendered by Angles, or the machine cannot render locally, this is not the Skill for it: `create-template-video` has Angles write the script and design the scenes, and renders in the cloud for 30 credits. That uploads each take, so say so before going that way. It is installed separately from the same repository; say so if it is not there.
 
 ## 2. Write the script and settle it
 

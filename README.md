@@ -1,14 +1,18 @@
 # Angles Video
 
-Product videos your coding agent writes itself.
+Product videos made from inside Codex or Claude Code, two ways.
 
-Inside Codex or Claude Code, the agent reads your repository, collects what is true about the product, writes the script, designs every scene in [Remotion](https://www.remotion.dev), renders the video on your machine, and looks at its own frames before handing you the file. There is no template to pick and nothing to upload.
+**Written by your agent.** The agent reads your repository, collects what is true about the product, writes the script, designs every scene in [Remotion](https://www.remotion.dev), renders the video on your machine, and looks at its own frames before handing you the file. There is no template to pick and nothing to upload, and rendering costs nothing.
 
-A template is designed before it has seen your product, so the one thing it can always fill is a headline and a paragraph. An agent that is already in your repository can draw what is really there: the numbers it can count, the command and what it prints, the interface as it is built.
+**Made from an Angles template.** The agent writes a summary of the product, Angles plans the scenes, you pick a selling angle and a template, and the video is rendered in the cloud and comes back as a link. Nothing to install beyond Node.js; each render costs 30 credits.
 
-Looking for the command-line tool? `npx angles-video <url>` renders a hosted template video from a product page — see [Command line](#command-line).
+A template is designed before it has seen your product, so what it can always fill is a headline and a paragraph; the rest of it appears when there is something real to put there. An agent that is already in your repository can draw what is really there: the numbers it can count, the command and what it prints, the interface as it is built. Take the template when you want a video quickly, cannot render on your machine, or want to keep editing in the browser.
+
+Looking for the command-line tool? `npx angles-video <url>` renders a template video from a product page with no agent involved — see [Command line](#command-line).
 
 ## Agent Skills
+
+Your agent writes and renders these itself:
 
 | Skill | Use it when |
 | --- | --- |
@@ -18,11 +22,17 @@ Looking for the command-line tool? `npx angles-video <url>` renders a hosted tem
 | [`create-video-essay`](skills/create-video-essay) | The video is about a subject, not a product — a piece of history, an idea, how something works. The agent researches it, records every claim with its source, and draws it. |
 | [`create-music-video`](skills/create-music-video) | You want a song and its video: lyrics built from what the song's audience really says, sung by a music model, and cut to on a stage of lights with every word arriving as it is sung. |
 
-Writing and rendering need no account. A synthesised voice, a library of music and sound effects, and — for a music video — the song and the pictures of its singer come through your [Angles account](https://angles.video/login?returnUrl=/developer-api) — set `ANGLES_API_KEY`. Your own files, or a provider key of your own, work without one. [Read the security policy](SECURITY.md)
+Angles makes this one from a template:
+
+| Skill | Use it when |
+| --- | --- |
+| [`create-template-video`](skills/create-template-video) | You want to choose a selling angle and a template and have the video rendered in the cloud — from a repository, a product page, a screen recording, or with you presenting on camera. |
+
+Writing and rendering your own video needs no account. A synthesised voice, a library of music and sound effects, and — for a music video — the song and the pictures of its singer come through your [Angles account](https://angles.video/login?returnUrl=/developer-api) — set `ANGLES_API_KEY`. Your own files, or a provider key of your own, work without one. A template video always needs the account. [Read the security policy](SECURITY.md)
 
 ## How a video gets made
 
-Every Skill follows the same eight steps, each producing a file the next one reads:
+Every Skill where the agent writes the video follows the same eight steps, each producing a file the next one reads. (A template video is made differently: see [Template videos](#template-videos).)
 
 1. **Workspace** — a `video/` directory in your repository with Remotion installed. Created once.
 2. **Facts** — what is true about the product today, each with where it came from. The only place a number on screen may come from.
@@ -50,31 +60,37 @@ Timing each word needs something that can hear, which the agent cannot. The Skil
 Paste this into a Codex conversation:
 
 ```text
-$skill-installer install https://github.com/anglesvideo/angles-video-skill/tree/main/skills/create-launch-video
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-launch-video
 ```
 
 For the recording Skill, install the other directory the same way:
 
 ```text
-$skill-installer install https://github.com/anglesvideo/angles-video-skill/tree/main/skills/create-video-from-recording
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-video-from-recording
 ```
 
 And for the presenter Skill:
 
 ```text
-$skill-installer install https://github.com/anglesvideo/angles-video-skill/tree/main/skills/create-presenter-video
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-presenter-video
 ```
 
 And for the video essay Skill:
 
 ```text
-$skill-installer install https://github.com/anglesvideo/angles-video-skill/tree/main/skills/create-video-essay
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-video-essay
 ```
 
 And for the music video Skill:
 
 ```text
-$skill-installer install https://github.com/anglesvideo/angles-video-skill/tree/main/skills/create-music-video
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-music-video
+```
+
+And for template videos:
+
+```text
+$skill-installer install https://github.com/anglesvideo/angles-video-skills/tree/main/skills/create-template-video
 ```
 
 Review the repository before installing any Skill that includes executable scripts. Start a new Codex conversation after installation if the Skill does not appear immediately.
@@ -84,29 +100,31 @@ Review the repository before installing any Skill that includes executable scrip
 Clone the repository:
 
 ```bash
-git clone --depth 1 https://github.com/anglesvideo/angles-video-skill.git ~/angles-video-skill
+git clone --depth 1 https://github.com/anglesvideo/angles-video-skills.git ~/angles-video-skills
 ```
 
 Install it for Codex:
 
 ```bash
 mkdir -p ~/.agents/skills
-ln -s ~/angles-video-skill/skills/create-launch-video ~/.agents/skills/create-launch-video
-ln -s ~/angles-video-skill/skills/create-video-from-recording ~/.agents/skills/create-video-from-recording
-ln -s ~/angles-video-skill/skills/create-presenter-video ~/.agents/skills/create-presenter-video
-ln -s ~/angles-video-skill/skills/create-video-essay ~/.agents/skills/create-video-essay
-ln -s ~/angles-video-skill/skills/create-music-video ~/.agents/skills/create-music-video
+ln -s ~/angles-video-skills/skills/create-launch-video ~/.agents/skills/create-launch-video
+ln -s ~/angles-video-skills/skills/create-video-from-recording ~/.agents/skills/create-video-from-recording
+ln -s ~/angles-video-skills/skills/create-presenter-video ~/.agents/skills/create-presenter-video
+ln -s ~/angles-video-skills/skills/create-video-essay ~/.agents/skills/create-video-essay
+ln -s ~/angles-video-skills/skills/create-music-video ~/.agents/skills/create-music-video
+ln -s ~/angles-video-skills/skills/create-template-video ~/.agents/skills/create-template-video
 ```
 
 Or install it for Claude Code:
 
 ```bash
 mkdir -p ~/.claude/skills
-ln -s ~/angles-video-skill/skills/create-launch-video ~/.claude/skills/create-launch-video
-ln -s ~/angles-video-skill/skills/create-video-from-recording ~/.claude/skills/create-video-from-recording
-ln -s ~/angles-video-skill/skills/create-presenter-video ~/.claude/skills/create-presenter-video
-ln -s ~/angles-video-skill/skills/create-video-essay ~/.claude/skills/create-video-essay
-ln -s ~/angles-video-skill/skills/create-music-video ~/.claude/skills/create-music-video
+ln -s ~/angles-video-skills/skills/create-launch-video ~/.claude/skills/create-launch-video
+ln -s ~/angles-video-skills/skills/create-video-from-recording ~/.claude/skills/create-video-from-recording
+ln -s ~/angles-video-skills/skills/create-presenter-video ~/.claude/skills/create-presenter-video
+ln -s ~/angles-video-skills/skills/create-video-essay ~/.claude/skills/create-video-essay
+ln -s ~/angles-video-skills/skills/create-music-video ~/.claude/skills/create-music-video
+ln -s ~/angles-video-skills/skills/create-template-video ~/.claude/skills/create-template-video
 ```
 
 ## Make a video
@@ -145,7 +163,13 @@ Or ask about a subject instead of a product:
 Make a four-minute video essay on why the Library of Alexandria really disappeared. Show me the sources and the throughlines first.
 ```
 
-The agent asks before it installs anything, shows you the angles and the script before it voices them, and then works through to a finished file.
+Or ask for a template:
+
+```text
+Make a template video for this repository. Show me the angles and the templates, and ask before you render.
+```
+
+The agent asks before it installs anything, shows you the angles and the script before it voices them, and then works through to a finished file. For a template video it shows you the angles and the templates, tells you what the render will contain, and asks before spending credits.
 
 ## Sound
 
@@ -192,13 +216,17 @@ A picture costs 5 credits from your Angles account.
 - An agent that can look at images, since the check step is done by eye.
 - No `ffmpeg` needed; the scripts fall back to the build inside Remotion. A system `ffmpeg` adds scene detection when watching a screen recording.
 - For `create-music-video` only: Python 3 with `numpy` and a system `ffmpeg`, which measure the song. Its listener is optional and is installed, if you agree to it, into the workspace.
-- An Angles account only for what your machine cannot make: a synthesised voice, a picture, a song, or a hosted render. One balance of credits pays for all four — 1 for a voice line, 5 for a picture, 30 for a song, 30 for a hosted render — and a new account starts with 200. Rendering on your own machine costs nothing.
+- An Angles account only for what your machine cannot make: a synthesised voice, a picture, a song, or a template video rendered in the cloud. One balance of credits pays for all four — 1 for a voice line, 5 for a picture, 30 for a song, 30 for a template render — and a new account starts with 200. Rendering on your own machine costs nothing.
 
 Remotion is free for individuals and for companies of up to three people. A larger company needs a [Remotion company licence](https://www.remotion.dev/docs/license); that licence is yours to hold and is not provided by these Skills.
 
 ## Privacy and safety
 
+What follows is for a video the agent writes itself; a template video sends more, and the paragraph after this one says what.
+
 The video is written and rendered on your machine. The only thing the workflow sends anywhere is the script text, to the voice service you choose; through an Angles account it goes to Angles and on to the voice provider it uses. Music and sound effects are downloaded from a library, so nothing about your video is sent to get them — unless you ask for a new one made with your own provider key, which sends its description. A picture made through your Angles account sends its description, and the made picture it is drawn like when there is one; none of your own files are sent for it. With your own voice and your own music, and no picture made, nothing is sent. Screen recordings and camera takes stay local, and the workspace keeps them out of git. A music video sends the lyrics and the style of the song to the service that sings it, and the descriptions of the singer's pictures to the one that draws them; the listener that times the words runs on your machine.
+
+A template video is made by Angles, so what Angles needs is sent to it: the summary of the product the agent wrote — never the repository's files — and any screenshot, recording, or camera take you ask to have in the video. An uploaded screenshot or screen recording becomes a public URL; a camera take is stored where only a signed, expiring link can read it. The agent checks every file for keys, customer data, and stray windows before it uploads one, and uploads only what you name.
 
 The Skills tell the agent not to read or copy:
 
@@ -212,11 +240,13 @@ When the source is a product page, only the URL you name is read, and its text i
 
 See [SECURITY.md](SECURITY.md) for reporting guidance.
 
-## Hosted render with templates
+## Template videos
 
-The earlier path is still here for when a video cannot be rendered locally, or when you want an Angles template and the browser editor: the agent writes a summary of the product, Angles plans the scenes, fits them to a template, and renders in the cloud. Each product Skill carries it as `references/hosted-render.md` and takes it only when you ask or when the machine cannot render. `create-video-essay` has no hosted path.
+`create-template-video` is the other way to make a video: the agent writes a summary of the product, Angles plans the scenes, fits them to the template you pick, and renders in the cloud. It starts from a repository or a product page, from a screen recording, or with you presenting on camera. Use it when you want a video quickly, when the machine cannot render, or when you want to keep editing in the browser.
 
 It needs an Angles account, and each render costs 30 credits.
+
+A template's scenes have slots — a code window, a figure, a quote, a screenshot frame — and Angles fills a slot only with something real: copy it wrote from the summary, a command copied from your README, a number read from your public repository, a screenshot you gave it. It does not invent any of them. A scene with nothing real to show is rendered as the template's plain text page, and the agent tells you which scenes those are, and what would fill them, before it asks you to confirm the credits.
 
 ### Connect your Angles account
 
@@ -230,12 +260,12 @@ Never commit the key to a repository. You can revoke it from the Integrations pa
 
 ### Check before you render
 
-On the hosted path, every Skill previews the render before the first one starts. A preview costs nothing, changes nothing, and can be repeated. It answers the questions you would otherwise only be able to answer by paying for a render and watching the result:
+The Skill previews every render before the first one starts. A preview costs nothing, changes nothing, and can be repeated. It answers the questions you would otherwise only be able to answer by paying for a render and watching the result:
 
 - Would this template accept this concept at all?
 - Which scene does each screenshot or recording land on?
 - Is anything you uploaded going to be left out of the video entirely?
-- Which scenes fall back to plain text because content is missing?
+- Which scenes will be plain text pages because nothing real was there to fill them, and what would fill them?
 
 You do not have to ask for it. The Skill runs it and reports anything worth acting on before it asks you to confirm the credits.
 
@@ -260,18 +290,18 @@ An API key is sufficient to set the template, background music, volume, and star
 ### Calling the client directly
 
 ```bash
-node skills/create-launch-video/scripts/angles.mjs upload --file ./demo.mp4
+node skills/create-template-video/scripts/angles.mjs upload --file ./demo.mp4
 ```
 
 ```bash
-node skills/create-launch-video/scripts/angles.mjs preview \
+node skills/create-template-video/scripts/angles.mjs preview \
   --video "your-video-id" \
   --template screen_demo \
   --video-asset "https://cdn.angles.video/..."
 ```
 
 ```bash
-node skills/create-launch-video/scripts/angles.mjs render \
+node skills/create-template-video/scripts/angles.mjs render \
   --video "your-video-id" \
   --template frame_liquid_bg_hero \
   --music "A Blue Day" \
@@ -283,17 +313,17 @@ node skills/create-launch-video/scripts/angles.mjs render \
 
 ### Example gallery
 
-These videos were rendered on the hosted path, from public software repositories. New examples can be added as different products, audiences, selling angles, and visual treatments are explored.
+These videos were made from templates, from public software repositories. New examples can be added as different products, audiences, selling angles, and visual treatments are explored.
 
 | Video | Source | Selling angle | Template | Music | Format |
 | --- | --- | --- | --- | --- | --- |
 | [Launch Week, Different Rooms](https://cdn.angles.video/videos/498a95fc-e046-4c8a-a34a-ebe6d7f4dfe5.mp4) | angles.video | One product, different conversations for different audiences | Bento Grid | Motivating Mornings · 20% | Landscape · 14 scenes · ~36s |
 
-Each example records the creative choices behind the output so future videos can demonstrate more than a change of visual style. Concepts, templates, music, and renders can all be selected and completed through the hosted path without requiring a browser login.
+Each example records the creative choices behind the output so future videos can demonstrate more than a change of visual style. Concepts, templates, music, and renders can all be selected and completed from the agent without requiring a browser login.
 
 ### Command line
 
-The CLI is the hosted path without an agent: Angles reads a product page, proposes three selling angles, and renders the one you pick with one of its templates.
+The CLI is the template path without an agent: Angles reads a product page, proposes three selling angles, and renders the one you pick with one of its templates.
 
 One URL in, three selling angles out. Pick the one worth rendering:
 
@@ -356,12 +386,14 @@ Each Skill is installed from its own directory URL, so it has to carry its own
 copy of everything it uses. `src/` holds the originals and the Skill copies are
 generated:
 
-| Source in `src/` | Copied into each Skill as |
-| --- | --- |
-| `writing-the-video.md` | `references/writing-the-video.md` — the workflow |
-| `starter/` | `assets/starter/` — the workspace the video is written in |
-| `client.mjs` | `scripts/angles.mjs` — the hosted-path client |
-| `api.md` | `references/api.md` |
+| Source in `src/` | Copied into | As |
+| --- | --- | --- |
+| `writing-the-video.md` | the Skills where the agent writes the video | `references/writing-the-video.md` — the workflow |
+| `starter/` | the same Skills | `assets/starter/` — the workspace the video is written in |
+| `client.mjs` | `create-template-video` | `scripts/angles.mjs` — the Angles API client |
+| `api.md` | `create-template-video` | `references/api.md` |
+
+A Skill carries one or the other, never both: the ones that write a video have nothing to call the client for, and the template Skill has no video to write.
 
 ```bash
 npm run sync-client
@@ -369,7 +401,7 @@ npm run sync-client
 
 `create-music-video` is cut to a song rather than to a voice reading a script, so it has a workflow and a starter of its own — the stage, and the scripts that make, measure and time a song — which live in its directory and are not copied anywhere. From `src/starter/` it takes only what both kinds of video need: `media.mjs`, `music.mjs`, `image.mjs`, `finish.mjs`, `tsconfig.json` and `src/index.ts`. `scripts/sync-client.mjs` lists them.
 
-`create-video-essay` has no hosted path, so it carries the workflow and the starter and leaves out the client and `api.md`. It also carries two scripts of its own, which live in its starter and are not copied anywhere: `read.mjs` keeps a text copy of each source, `check.mjs` holds the script against the facts and every quotation against those copies, and `handover.mjs` writes the subtitles, chapter times, source list, description and cover from them.
+`create-video-essay` also carries scripts of its own, which live in its starter and are not copied anywhere: `read.mjs` keeps a text copy of each source, `check.mjs` holds the script against the facts and every quotation against those copies, and `handover.mjs` writes the subtitles, chapter times, source list, description and cover from them.
 
 ### The audio library
 
@@ -402,6 +434,7 @@ test suite rather than shipping files the Skills disagree about.
 - [Presenter Skill instructions](skills/create-presenter-video/SKILL.md)
 - [Video essay Skill instructions](skills/create-video-essay/SKILL.md)
 - [Music video Skill instructions](skills/create-music-video/SKILL.md)
-- [Developer API reference](skills/create-launch-video/references/api.md)
+- [Template video Skill instructions](skills/create-template-video/SKILL.md)
+- [Developer API reference](src/api.md)
 - [Security policy](SECURITY.md)
 - [License](LICENSE)

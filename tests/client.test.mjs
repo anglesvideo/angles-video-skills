@@ -6,27 +6,24 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
-import { SHARED_FILES, SKILLS, SKILLS_WITHOUT_THE_CLIENT, SKILLS_WITH_THEIR_OWN_STARTER, sharedFilesFor } from '../scripts/sync-client.mjs';
+import { readdir } from 'node:fs/promises';
+import { SHARED_FILES, SKILLS, SKILLS_SHIPPING_THE_CLIENT, SKILLS_WITHOUT_THE_CLIENT, SKILLS_WITH_THEIR_OWN_STARTER, sharedFilesFor } from '../scripts/sync-client.mjs';
 
 const clientPath = fileURLToPath(
-  new URL('../skills/create-launch-video/scripts/angles.mjs', import.meta.url)
+  new URL('../skills/create-template-video/scripts/angles.mjs', import.meta.url)
 );
 const testKey = 'angles_sk_test_secret_that_must_not_leak';
 
-// Each Skill is installed on its own from its own directory URL, so each one
-// ships the client rather than reaching for a shared copy. The suite exercises
-// one of them, which is only sound while the copies are identical.
+// Each Skill is installed on its own from its own directory URL, so a Skill
+// that calls the client ships it rather than reaching for a shared copy. The
+// suite exercises one copy, which is only sound while every copy is identical.
 const SKILL_FILES = ['scripts/angles.mjs', 'references/api.md'];
-const SKILLS_SHARING_THE_CLIENT = [
-  'create-launch-video',
-  'create-video-from-recording',
-  'create-presenter-video',
-];
 
-test('every Skill ships the same client and API reference', async () => {
+test('every Skill that ships the client ships the same client and API reference', async () => {
+  assert.ok(SKILLS_SHIPPING_THE_CLIENT.includes('create-template-video'));
   for (const file of SKILL_FILES) {
     const [first, ...rest] = await Promise.all(
-      SKILLS_SHARING_THE_CLIENT.map(skill =>
+      SKILLS_SHIPPING_THE_CLIENT.map(skill =>
         readFile(fileURLToPath(new URL(`../skills/${skill}/${file}`, import.meta.url)), 'utf8')
       )
     );
@@ -34,7 +31,7 @@ test('every Skill ships the same client and API reference', async () => {
       assert.equal(
         copy,
         first,
-        `${SKILLS_SHARING_THE_CLIENT[index + 1]}/${file} has drifted from ${SKILLS_SHARING_THE_CLIENT[0]}/${file}`
+        `${SKILLS_SHIPPING_THE_CLIENT[index + 1]}/${file} has drifted from ${SKILLS_SHIPPING_THE_CLIENT[0]}/${file}`
       );
     });
   }
@@ -61,16 +58,56 @@ test('every Skill copy matches its source in src/', async () => {
   }
 });
 
-// A Skill with no hosted path has nothing to call the client for; carrying it
-// would be a script to review that nothing uses.
-test('a Skill with no hosted path ships no client', async () => {
+const exists = path =>
+  readFile(fileURLToPath(new URL(`../${path}`, import.meta.url)), 'utf8').then(
+    () => true,
+    () => false
+  );
+
+// A Skill where the agent writes the video has nothing to call the client for;
+// carrying it would be a script to review that nothing uses.
+test('a Skill that writes its own video ships no client', async () => {
   for (const skill of [...SKILLS_WITHOUT_THE_CLIENT, ...Object.keys(SKILLS_WITH_THEIR_OWN_STARTER)]) {
     for (const file of [...SKILL_FILES, 'references/hosted-render.md']) {
-      const present = await readFile(fileURLToPath(new URL(`../skills/${skill}/${file}`, import.meta.url)), 'utf8').then(
-        () => true,
-        () => false
+      assert.equal(
+        await exists(`skills/${skill}/${file}`),
+        false,
+        `skills/${skill}/${file} belongs to the template Skill, not to ${skill}`
       );
-      assert.equal(present, false, `skills/${skill}/${file} belongs to the hosted path, which ${skill} does not have`);
+    }
+  }
+});
+
+// And the other way round: the template Skill has Angles make the video, so a
+// workspace to write one in would be a second path hiding inside it.
+test('the template Skill ships nothing to write a video with', async () => {
+  for (const skill of SKILLS_SHIPPING_THE_CLIENT) {
+    for (const file of ['references/writing-the-video.md', 'assets/starter/package.json']) {
+      assert.equal(await exists(`skills/${skill}/${file}`), false, `skills/${skill}/${file} belongs to the Skills that write their own video`);
+    }
+  }
+});
+
+// Files were moved between Skills when the template flow became a Skill of its
+// own. A link that still points at where something used to be sends an agent
+// to read a file that is not there.
+test('every link inside a Skill points at a file the Skill ships', async () => {
+  const skillsUrl = new URL('../skills/', import.meta.url);
+  for (const skill of await readdir(fileURLToPath(skillsUrl))) {
+    const documents = ['SKILL.md'];
+    const references = await readdir(fileURLToPath(new URL(`${skill}/references/`, skillsUrl))).catch(() => []);
+    documents.push(...references.filter(name => name.endsWith('.md')).map(name => `references/${name}`));
+    for (const document of documents) {
+      const text = await readFile(fileURLToPath(new URL(`${skill}/${document}`, skillsUrl)), 'utf8');
+      // Links to files only: `](name.md)`. Code in these documents has its own `](`.
+      for (const [, target] of text.matchAll(/\]\((?!https?:)([^)#\s]+\.(?:md|mjs|json|ts|tsx))(?:#[^)]*)?\)/g)) {
+        const resolved = new URL(target, new URL(`${skill}/${document}`, skillsUrl));
+        assert.equal(
+          await readFile(fileURLToPath(resolved), 'utf8').then(() => true, () => false),
+          true,
+          `skills/${skill}/${document} links to ${target}, which is not there`
+        );
+      }
     }
   }
 });

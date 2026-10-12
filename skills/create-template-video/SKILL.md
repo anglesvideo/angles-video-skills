@@ -1,10 +1,42 @@
-# Hosted render with an Angles template
+---
+name: create-template-video
+description: Make a product video from an Angles template, rendered in the cloud. Angles plans the scenes from a summary you write, the user picks a selling angle and a template, and the finished mp4 comes back as a link — nothing to install beyond Node.js. Use whenever a user asks for a template video, an Angles-hosted or cloud-rendered video, a quick product, launch, feature, or promo video without setting up a renderer on their machine, wants to choose among templates or colour variants, wants to keep editing in the Angles browser editor, or when this machine cannot render video locally. Works from a repository, a product page, a screen recording, or the user presenting on camera. Needs ANGLES_API_KEY, and each render costs 30 credits. For a video designed scene by scene for this one product and rendered free on the user's machine, use create-launch-video, create-video-from-recording, or create-presenter-video instead.
+---
 
-Use this only when the user asks for an Angles-hosted or template video, wants the browser editor, or the machine cannot render locally (no Node.js 18+, or packages and a headless browser cannot be installed). Otherwise write the video yourself as `SKILL.md` describes.
+# Create a template video
 
-On this path Angles plans the scenes from a summary you write, fits them to one of its templates, and renders in the cloud. It needs `ANGLES_API_KEY`, and each render costs 30 credits from the account's balance. You do not design the scenes here; you choose among templates.
+Angles makes this video. It plans the scenes from a summary you write, fits them to the template the user picks, and renders in the cloud. Your part is what Angles cannot do from where it sits: read the product, say what is true about it, check what will be on screen before credits are spent, and tell the user plainly what came back. You do not design scenes here; you choose among templates.
+
+It needs `ANGLES_API_KEY`, and each render costs 30 credits from the account's balance. Concepts, previews, and uploads cost nothing.
 
 Use the bundled `scripts/angles.mjs` client for every Angles API operation. Do not construct ad hoc HTTP requests unless the client is unavailable.
+
+## Where the video starts from
+
+- **A repository or a product page** — follow the steps in this file.
+- **A screen recording the user already has** — follow [references/recording.md](references/recording.md) instead of the steps below. The recording has to be watched and checked frame by frame before it is uploaded, and matched to a template that plays footage.
+- **The user presenting on camera** — follow [references/presenter.md](references/presenter.md) instead of the steps below. The script is fixed before anyone records, and each recording belongs to one sentence.
+
+Read the next section whichever one it is: it is what all three have in common.
+
+If the user wants a video designed for their product rather than fitted to a template, and the machine can render, that is a different job: `create-launch-video`, `create-video-from-recording`, and `create-presenter-video` have the agent write every scene and render locally at no cost. Say so once when the user has not chosen, and carry on with whichever they pick.
+
+## What a template shows, and what it leaves out
+
+A template is designed before it has seen the product. Its scenes have slots — a code window, a terminal, a figure, a quote, a screenshot frame — and Angles fills a slot only with something real: copy it wrote from your summary, or material you supplied. It never invents a command, a number, or a customer's words, because those would be printed in a video the user publishes.
+
+A scene whose slot has nothing real in it is rendered as the template's plain text page instead: the scene's sentence, in the template's own look. The video still renders, and the preview names every scene this happened to and the slot that was empty. So how much of the template the user sees depends on what you send:
+
+| The template has | It appears when you send |
+| --- | --- |
+| A code window, a terminal, run steps | `codeSample` (with `codeLanguage`) and `runSteps` |
+| Figures from the repository — stars, languages, commit history, releases | `repositoryUrl`, for a public repository |
+| A screenshot or browser frame holding the product | Screenshots, uploaded and passed to the render |
+| A closing page with the address to visit | `productUrl` |
+| Capability cards, steps, a before and an after | Nothing extra — Angles writes these from `productSummary` and `notableFeatures` |
+| A measured result, a customer quote, pricing | Nothing the API accepts. These stay text pages unless the user fills them in the browser editor |
+
+A frame with no screenshot is not a text page: it draws an abstract stand-in panel, which is what makes a finished video look like a template nobody filled in. Screenshots are worth asking for.
 
 ## 1. Check access
 
@@ -15,8 +47,6 @@ Use `ANGLES_API_BASE_URL` only when the user is testing a non-production Angles 
 ## 2. Build safe product context
 
 Angles never reads the source. You analyze it here and submit a structured summary, so this step is the only place the repository or the page is ever read. Read the minimum needed, from whichever source the user pointed at.
-
-If the user has a screen recording of the product, that is a different job: the recording has to be watched, checked frame by frame, and matched to a template that plays footage. Use the `create-video-from-recording` Skill for it.
 
 ### From a repository
 
@@ -42,8 +72,8 @@ Whichever source it came from, produce a structured summary with:
 - `targetAudience`
 - `painPoint`
 - `launchGoal`
-- `notableFeatures` — treat this as required for a developer product. One of the three concepts is built around a checklist of what the product does, and this is the material that scene is written from. Leave it out and the scene has nothing concrete to list, so it is downgraded to plain text and reported back in `sceneWarnings`. Write each one as something a user can do, not as a category of capability.
-- `repositoryName` and public `repositoryUrl` when available — omit both when the source was a product page rather than a repository. Send `repositoryUrl` whenever the repository is public, even for a page-sourced video that happens to have one: Angles reads the repository's own public figures from it — stars, forks, language shares, commit history, releases — and puts them on screen. Scenes built around a figure otherwise print the draft table's stand-ins, which is a `0` star count and `Illustrative outcome — replace with your metric` over invented bars. Nothing in the brief can substitute for it, because the planner is not allowed to invent a number. A private repository is no use here and should be omitted: its URL only produces a failed read.
+- `notableFeatures` — treat this as required for a developer product. One of the three concepts is built around a checklist of what the product does, and this is the material that scene is written from. Write each one as something a user can do, not as a category of capability.
+- `repositoryName` and public `repositoryUrl` when available — omit both when the source was a product page rather than a repository. Send `repositoryUrl` whenever the repository is public, even for a page-sourced video that happens to have one: Angles reads the repository's own public figures from it — stars, forks, language shares, commit history, releases — and puts them on screen. Nothing in the brief can substitute for it, because the planner is not allowed to invent a number, so without it every scene built around a figure becomes a text page. A private repository is no use here and should be omitted: its URL only produces a failed read.
 - `productUrl` — the product's public address, where the video sends its viewer. Several templates close on a full-frame destination, and nothing else the brief carries can stand in for it: a repository URL sends people somewhere else, and the planner is not allowed to invent an address. Without it those plates fall back to the brand name. Send the address the user would tell someone, not a deep link into the app, and never a staging or internal hostname — it is printed on screen in a video they may publish.
 
 Add the product's real technical surface when the source shows one:
@@ -52,11 +82,11 @@ Add the product's real technical surface when the source shows one:
 - `codeLanguage`: what `codeSample` is written in, such as `bash`, `ts`, or `python`.
 - `runSteps`: up to six real steps of running it, in order, each a short phrase.
 
-Developer templates draw a terminal, a code window, and a step list, and Angles will not write their contents — an invented command is a command that does not run. Supplying these is what fills those scenes; leaving them out renders visible `[DRAFT]` and `// Add your real example` placeholders into the finished video.
+Developer templates draw a terminal, a code window, and a step list, and Angles will not write their contents — an invented command is a command that does not run. Supplying these is what fills those scenes; without them each one is a text page, which on the developer templates can be half the video.
 
-Copy them, never compose them. If the repository has no command a user would run, or the page is marketing copy with no real surface in it, omit all three: the placeholder at least says it needs filling in, while a plausible-looking command that fails is worse than nothing. Never put credentials, private endpoints, internal hostnames, or anything from `.env*` in a sample — it is printed on screen in a video the user may publish.
+Copy them, never compose them. If the repository has no command a user would run, or the page is marketing copy with no real surface in it, omit all three: a text page is honest, and a plausible-looking command that fails is not. Never put credentials, private endpoints, internal hostnames, or anything from `.env*` in a sample — it is printed on screen in a video the user may publish.
 
-Add two more when the user has said what they want:
+Add these when the user has said what they want:
 
 - `aspectRatio`: `landscape` or `portrait`. Set this field — describing the orientation in `launchGoal` or any other prose does not control it.
 - `preferredTemplateId`: generate all three concepts for one template. Set it whenever the user already has screenshots, because a scene plan is written for the template it was generated against. Choosing here is what makes their images land in the plan; switching template after generation leaves a plan the new template rejects.
@@ -114,7 +144,7 @@ Use the template's `colorVariants` and `backgroundMotifs` fields to show the ava
 
 ## 5. Upload the user's media
 
-Ask for screenshots rather than waiting to be offered them. Two of the three concepts are built around scenes that hold a real product surface, and those scenes do not fail without an upload — they fall back to a drawn abstract panel or to plain text, which is what makes a finished video look like a template that was never filled in. Two or three captures of the product's main screens is what the scenes rotate through; below that the same capture repeats.
+Ask for screenshots rather than waiting to be offered them. Two of the three concepts are built around scenes that hold a real product surface, and those scenes do not fail without an upload — they draw an abstract stand-in panel. Two or three captures of the product's main screens is what the scenes rotate through; below that the same capture repeats.
 
 So before rendering, say plainly that screenshots are what separates a video of this product from a video about it, and ask the user for them. Go ahead without if they have none — no scene is blocked — but do not let the absence go unmentioned.
 
@@ -126,7 +156,7 @@ node <skill-directory>/scripts/angles.mjs upload --file <path>
 
 Only upload files the user has asked to include. Never upload repository contents, and never upload a file the user has not named. Check an image for credentials, customer data, or unrelated windows before uploading it — an uploaded file becomes a public URL.
 
-Keep the returned `url`. An oversized file is refused locally with the 50MB limit and an `ffmpeg` command that gets it under; offer the command rather than running it unasked.
+An oversized file is refused locally with the 50MB limit and an `ffmpeg` command that gets it under; offer the command rather than running it unasked.
 
 ## 6. Preview the render
 
@@ -146,8 +176,19 @@ Act on the result before spending the credits:
 
 - `canRender: false` — read `blockers` and fix them. A template that rejects the scene plan needs a video generated for that template, not this one.
 - `unusedMedia` — those uploads reach no scene. Rendering would produce a video without them, which is rarely what the user asked for. Say so and choose a template that has slots for them.
-- `warnings` — scenes downgraded to a plain text layout. Report which ones and what content they are missing.
-- `scenes` — the shot list with each scene's `assetUrl` and `assetSource`. Use it to tell the user where their screenshots actually appear.
+- `scenes` — the shot list with each scene's `assetUrl` and `assetSource`. Use it to tell the user where their screenshots actually appear. A scene carrying `downgradedFrom` will be a text page.
+- `warnings` — read every `scene-content-contract-fallback` entry. Its message names the scene and ends with the reason: `Missing layoutPayload: …` or `Only draft content for layoutPayload: …`, followed by the slots that had nothing real in them.
+
+What to do about a text page depends on the slot it names:
+
+- **`codeSnippet`, `logSteps`** — the template wanted a command and its steps. If the source has them, generate new concepts with `codeSample` and `runSteps`.
+- **`chartValue`, `chartValues`, `repoStars`, `repoForks`, `contributionDays`, and other figures** — the template wanted a measured number. If there is a public repository, generate new concepts with `repositoryUrl`. Otherwise there is no number to show, and the text page is the right result.
+- **`featureGridItems`, `flowSteps`, `criteria`, `beforeBody`, `afterBody`, `tagline`, `question`, `recommendation`** — copy Angles writes itself. Reported as draft, it means the writing pass did not finish. Run `concepts` again; it costs nothing, and the second run usually comes back complete.
+- **`testimonialBody` and the other quote fields, `pricing…`** — nothing the API accepts. Leave the text page, or point the user to `editUrl` to fill it in the browser and export there.
+
+Material belongs to the brief the concepts were generated from, so it cannot be added to a video that already exists — hence new concepts. A repeated `concepts` leaves another project in the user's account; mention it so they can delete the one they did not use.
+
+Then tell the user what the video will be, before asking for credits: which scenes carry the template's layouts, which will be text and why, and what would change that. Two text pages in eight is an ordinary result for a product with no public numbers. Six in eight means something went missing, and is worth fixing before rendering rather than after.
 
 ## 7. Confirm and render
 
@@ -185,8 +226,8 @@ node <skill-directory>/scripts/angles.mjs status --video <video-id>
 - For `rendering`, report concise progress and continue checking at a reasonable interval.
 - For `rendered`, return `videoUrl` and `downloadUrl` prominently.
 - When `launchCopy` is present, include the platform-specific publish copy after the video links so the user can post the video without asking for a second asset. If `hooks` are present, include one or two strong alternatives.
-- When `sceneWarnings` is present, say so before presenting the video. A `scene-content-contract-fallback` entry means that scene was rendered as plain text instead of the layout it was written for, so an uploaded screenshot or clip may not appear. Name the affected scenes and offer to re-render after supplying what the warning says is missing.
+- When `sceneWarnings` is present, say so before presenting the video. Each `scene-content-contract-fallback` entry is a scene that was rendered as a text page, with the same reasons the preview gave. Name the affected scenes and say what would fill them, as in step 6.
 - For `failed`, report the latest workflow error. Do not claim credits were spent unless the API explicitly reports it; a failed render's credits are handed back automatically. Offer one retry with the same idempotency key only after correcting deterministic configuration errors such as an unavailable renderer or timeout that is too short.
 - Always include `editUrl` as an optional path for detailed edits, not as a required step.
 
-Read [api.md](api.md) only when troubleshooting inputs, status values, authentication, or API errors.
+Read [references/api.md](references/api.md) only when troubleshooting inputs, status values, authentication, or API errors.

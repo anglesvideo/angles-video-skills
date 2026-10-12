@@ -1,12 +1,10 @@
-# Hosted presenter video with an Angles template
+# The user on camera, on an Angles template
 
-Use this only when the user asks for an Angles-hosted or template video, wants the browser editor, or the machine cannot render locally (no Node.js 18+, or packages and a headless browser cannot be installed). Otherwise write the video yourself as `SKILL.md` describes. Unlike the local path, this one uploads each recorded take to Angles.
-
-On this path Angles plans the scenes from a summary you write, fits them to one of its templates, and renders in the cloud. It needs `ANGLES_API_KEY`, and each render costs 30 credits from the account's balance. You do not design the scenes here; you choose among templates.
-
-Use the bundled `scripts/angles.mjs` client for every Angles API operation. Do not construct ad hoc HTTP requests unless the client is unavailable.
+Follow this instead of the steps in `SKILL.md` when the user wants to present the video themselves.
 
 In a presenter video the user's own voice replaces the synthesised narrator, and their picture plays in a round window over the scenes. Angles writes the script and designs the scenes; the user records it one sentence at a time. The whole job is arranged around one fact: **the script is fixed before anyone records, and each recording belongs to exactly one sentence.**
+
+Unlike a video from a repository, this one sends the user's own files somewhere: each recorded take is uploaded to Angles. Say so before any work is done.
 
 ## 1. Check access
 
@@ -21,7 +19,7 @@ Tell the user up front what they are signing up for: reading roughly five to twe
 Angles never reads the source. Read the minimum needed from the repository the user is working in or the product page they name — `README*`, product docs, package manifests, public landing-page copy — and produce a structured summary:
 
 - `productName`, `productSummary`, `targetAudience`, `painPoint`, `launchGoal`
-- `notableFeatures` — things a user can do with the product, written concretely. A scene with nothing concrete to list is downgraded to plain text.
+- `notableFeatures` — things a user can do with the product, written concretely. A scene with nothing concrete to list becomes a text page.
 - `codeSample`, `codeLanguage`, `runSteps` — only when copied exactly from the source. Never compose them, and never include credentials, internal hostnames, or anything from `.env*`.
 - `productUrl` — the product's public address, printed on the closing plate of several templates. The planner may not invent one and a repository URL is somewhere else, so without it those plates fall back to the brand name. Never a staging or internal hostname.
 - `aspectRatio`: `landscape` or `portrait`.
@@ -131,7 +129,7 @@ node <skill-directory>/scripts/angles.mjs preview --video <video-id> --template 
 Use the same template the script was drafted for.
 
 - `canRender: false` — read `blockers`. A scene with no take, or a different template from the script's, is reported here. Fix it before spending anything.
-- `warnings` — scenes downgraded to a plain text layout. Report which ones.
+- `warnings` — scenes that will be rendered as the template's text page because a slot had nothing real in it. Each message names the slot; step 6 of `SKILL.md` says what fills each kind. Report which scenes and why.
 
 ## 10. Confirm and render
 

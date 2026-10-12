@@ -1,6 +1,6 @@
 ---
 name: create-video-from-recording
-description: Turn a screen recording of a product into a finished promo video that you write and render yourself. Use when a user points at a screen capture, screencast, demo recording, or product walkthrough file and asks to turn it into a video, promo, ad, social clip, or launch asset. Watch the recording locally, check its frames for anything that should not be published, write a script around what it actually shows, then design the video in Remotion — cutting, framing, zooming, and labelling the footage to match each spoken line — render it on the user's machine, check the result, and return a finished mp4. The recording never leaves the machine and no template is involved. Falls back to an Angles-hosted template render only when asked or when local rendering is impossible.
+description: Turn a screen recording of a product into a finished promo video that you write and render yourself. Use when a user points at a screen capture, screencast, demo recording, or product walkthrough file and asks to turn it into a video, promo, ad, social clip, or launch asset. Watch the recording locally, check its frames for anything that should not be published, write a script around what it actually shows, then design the video in Remotion — cutting, framing, zooming, and labelling the footage to match each spoken line — render it on the user's machine, check the result, and return a finished mp4. The recording never leaves the machine and no template is involved. For a recording played in an Angles template and rendered in the cloud, use create-template-video.
 ---
 
 # Turn a screen recording into a video
@@ -15,7 +15,7 @@ This Skill is for a recording the user already has. To build a video from a repo
 
 Local rendering needs Node.js 18 or newer, and the user's agreement to install npm packages and a headless browser into a workspace directory. Writing and rendering need no account; a synthesised voice, the music and sound-effect library, and pictures that cannot be drawn as code come through the user's Angles account, and the recording is not uploaded anywhere.
 
-Take the hosted path in [references/hosted-render.md](references/hosted-render.md) instead only when the user asks for an Angles-hosted or template video, or when the machine cannot do the above. That path uploads the recording, so say so before taking it.
+When the user asks for a template video or one rendered by Angles, or the machine cannot do the above, this is not the Skill for it: `create-template-video` plays the recording in an Angles template and renders in the cloud for 30 credits. That uploads the recording, so say so before going that way. It is installed separately from the same repository; say so if it is not there.
 
 Set up the workspace now — step 1 of the workflow — because its scripts are what you watch the recording with.
 

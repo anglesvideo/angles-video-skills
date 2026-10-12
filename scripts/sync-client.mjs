@@ -2,8 +2,9 @@
 
 /**
  * Copies the shared files into every Skill that ships them: the workflow for
- * writing a video, the starter workspace it is written in, and — for the
- * Skills that have a hosted path — its client and API reference.
+ * writing a video and the starter workspace it is written in, for the Skills
+ * where the agent writes the video — and the client and its API reference, for
+ * the one where Angles does.
  *
  * Each Skill is installed from its own directory URL, so it has to carry these
  * files rather than import a shared copy — which is why the duplicates exist at
@@ -39,22 +40,28 @@ export const SHARED_FILES = new Map([
     'scripts/finish.mjs',
   ].map(file => [`src/starter/${file}`, `assets/starter/${file}`]),
 ]);
-export const SKILLS_SHIPPING_THE_CLIENT = [
+/**
+ * The template Skill. Angles plans and renders its videos, so it carries the
+ * client and the API reference, and nothing to write a video with.
+ */
+export const SKILLS_SHIPPING_THE_CLIENT = ['create-template-video'];
+/**
+ * Skills where the agent writes the video itself. They carry the workflow and
+ * the starter, and leave out the client and its API reference: a script that
+ * nothing in the Skill calls is only something more to review.
+ */
+export const SKILLS_WITHOUT_THE_CLIENT = [
   'create-launch-video',
   'create-video-from-recording',
   'create-presenter-video',
+  'create-video-essay',
 ];
-/**
- * Skills with no hosted path to fall back to. They carry the workflow and the
- * starter, and leave out the client and its API reference.
- */
-export const SKILLS_WITHOUT_THE_CLIENT = ['create-video-essay'];
-const HOSTED_PATH_FILES = ['src/client.mjs', 'src/api.md'];
+const CLIENT_FILES = ['src/client.mjs', 'src/api.md'];
 /**
  * Skills that make a different kind of video and bring a starter of their own.
  * A music video is cut to a song, not to a voice reading a script, so it has no
  * use for the timeline or the workflow built on it. It takes from the shared
- * starter only the mechanics both kinds need, and nothing from the hosted path.
+ * starter only the mechanics both kinds need, and no client.
  */
 export const SKILLS_WITH_THEIR_OWN_STARTER = {
   'create-music-video': ['tsconfig.json', 'src/index.ts', 'scripts/media.mjs', 'scripts/music.mjs', 'scripts/image.mjs', 'scripts/character.mjs', 'scripts/finish.mjs'].map(
@@ -74,8 +81,8 @@ export function copyPathFor(skill, sharedPath) {
 /** The shared files a Skill carries. */
 export function sharedFilesFor(skill) {
   if (skill in SKILLS_WITH_THEIR_OWN_STARTER) return SKILLS_WITH_THEIR_OWN_STARTER[skill];
-  const all = [...SHARED_FILES.keys()];
-  return SKILLS_WITHOUT_THE_CLIENT.includes(skill) ? all.filter(path => !HOSTED_PATH_FILES.includes(path)) : all;
+  if (SKILLS_SHIPPING_THE_CLIENT.includes(skill)) return CLIENT_FILES;
+  return [...SHARED_FILES.keys()].filter(path => !CLIENT_FILES.includes(path));
 }
 
 async function sync() {

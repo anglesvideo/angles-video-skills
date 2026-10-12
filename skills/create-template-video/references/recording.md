@@ -1,12 +1,10 @@
-# Hosted render of a screen recording with an Angles template
+# A screen recording, on an Angles template
 
-Use this only when the user asks for an Angles-hosted or template video, wants the browser editor, or the machine cannot render locally (no Node.js 18+, or packages and a headless browser cannot be installed). Otherwise write the video yourself as `SKILL.md` describes. Unlike the local path, this one uploads the recording, and an uploaded recording becomes a public URL.
+Follow this instead of the steps in `SKILL.md` when the user has a screen recording they want turned into a video. Angles plans the scenes from a summary you write, plays the footage in a template built for it, and renders in the cloud.
 
-On this path Angles plans the scenes from a summary you write, fits them to one of its templates, and renders in the cloud. It needs `ANGLES_API_KEY`, and each render costs 30 credits from the account's balance. You do not design the scenes here; you choose among templates.
+Unlike a video from a repository, this one sends the user's own file somewhere: the recording is uploaded, and an uploaded recording becomes a public URL. Say so before anything is sent, and do the frame check in step 2 first.
 
-Use the bundled `scripts/angles.mjs` client for every Angles API operation. Do not construct ad hoc HTTP requests unless the client is unavailable.
-
-This Skill is for a recording the user already has. To build a video from a repository or a product page instead, use the `create-launch-video` Skill.
+This is for a recording the user already has. To build the video from a repository or a product page, go back to `SKILL.md`.
 
 ## 1. Check access
 
@@ -160,7 +158,7 @@ When `recordingAnalysis.pauses` lists any stretch, or you noted one in step 2, p
 
 - `canRender: false` — read `blockers` and fix them before spending anything.
 - `unusedMedia` listing the recording — it would reach no scene. The render would succeed and the video would not contain the footage, which is the one outcome this Skill exists to avoid. Do not render; choose a template that has slots for it.
-- `warnings` — scenes downgraded to a plain text layout. Report which ones and what they are missing.
+- `warnings` — scenes that will be rendered as the template's text page because a slot had nothing real in it. Each message names the slot; step 6 of `SKILL.md` says what fills each kind. Report which scenes and why.
 - `scenes` — the shot list. Tell the user which scenes play their recording and which are typography.
 
 ## 7. Confirm and render
@@ -194,7 +192,7 @@ node <skill-directory>/scripts/angles.mjs status --video <video-id>
 - For `rendering`, report concise progress and continue checking at a reasonable interval.
 - For `rendered`, return `videoUrl` and `downloadUrl` prominently.
 - When `launchCopy` is present, include the platform-specific publish copy after the links.
-- When `sceneWarnings` is present, say so before presenting the video. A `scene-content-contract-fallback` entry means that scene played as plain text instead of the layout it was written for.
+- When `sceneWarnings` is present, say so before presenting the video. A `scene-content-contract-fallback` entry means that scene was rendered as a text page instead of the layout it was written for, for the reason its message gives.
 - For `failed`, report the latest workflow error. Do not claim credits were spent unless the API explicitly reports it; a failed render's credits are handed back automatically.
 - Always include `editUrl` as an optional path for detailed edits, not as a required step.
 
