@@ -1,6 +1,6 @@
 # Angles Video
 
-Product videos made from inside Codex or Claude Code, two ways.
+Product videos made from inside Codex or Claude Code, two ways. Both are compared on [angles.video/developers](https://angles.video/developers).
 
 **Written by your agent.** The agent reads your repository, collects what is true about the product, writes the script, designs every scene in [Remotion](https://www.remotion.dev), renders the video on your machine, and looks at its own frames before handing you the file. There is no template to pick and nothing to upload, and rendering costs nothing.
 
@@ -19,14 +19,14 @@ Your agent writes and renders these itself:
 | [`create-launch-video`](skills/create-launch-video) | The product is a repository you are working in or a page you can name. |
 | [`create-video-from-recording`](skills/create-video-from-recording) | You have a screen recording of the product and want it cut into a finished video. |
 | [`create-presenter-video`](skills/create-presenter-video) | You want to present the product yourself: the agent writes the script, you record it one sentence at a time, and it builds the video around your takes. |
-| [`create-video-essay`](skills/create-video-essay) | The video is about a subject, not a product — a piece of history, an idea, how something works. The agent researches it, records every claim with its source, and draws it. |
-| [`create-music-video`](skills/create-music-video) | You want a song and its video: lyrics built from what the song's audience really says, sung by a music model, and cut to on a stage of lights with every word arriving as it is sung. |
+| [`create-video-essay`](skills/create-video-essay) | The video is about a subject, not a product — a piece of history, an idea, how something works. The agent researches it, records every claim with its source, and draws it. [Watch a sample](https://angles.video/video-essay) |
+| [`create-music-video`](skills/create-music-video) | You want a song and its video: lyrics built from what the song's audience really says, sung by a music model, and cut to on a stage of lights with every word arriving as it is sung. [See how one was made](https://angles.video/music-video) |
 
 Angles makes this one from a template:
 
 | Skill | Use it when |
 | --- | --- |
-| [`create-template-video`](skills/create-template-video) | You want to choose a selling angle and a template and have the video rendered in the cloud — from a repository, a product page, a screen recording, or with you presenting on camera. |
+| [`create-template-video`](skills/create-template-video) | You want to choose a selling angle and a template and have the video rendered in the cloud — from a repository, a product page, a screen recording, or with you presenting on camera. [How it works](https://angles.video/integrations/codex) |
 
 Writing and rendering your own video needs no account. A synthesised voice, a library of music and sound effects, and — for a music video — the song and the pictures of its singer come through your [Angles account](https://angles.video/login?returnUrl=/developer-api) — set `ANGLES_API_KEY`. Your own files, or a provider key of your own, work without one. A template video always needs the account. [Read the security policy](SECURITY.md)
 
