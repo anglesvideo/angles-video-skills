@@ -216,7 +216,7 @@ A picture costs 5 credits from your Angles account.
 - An agent that can look at images, since the check step is done by eye.
 - No `ffmpeg` needed; the scripts fall back to the build inside Remotion. A system `ffmpeg` adds scene detection when watching a screen recording.
 - For `create-music-video` only: Python 3 with `numpy` and a system `ffmpeg`, which measure the song. Its listener is optional and is installed, if you agree to it, into the workspace.
-- An Angles account only for what your machine cannot make: a synthesised voice, a picture, a song, or a template video rendered in the cloud. One balance of credits pays for all four — 1 for a voice line, 5 for a picture, 30 for a song, 30 for a template render — and a new account starts with 200. Rendering on your own machine costs nothing.
+- An Angles account only for what your machine cannot make: a synthesised voice, a picture, a song, or a template video rendered in the cloud. One balance of credits pays for all four — 1 for a voice line, 5 for a picture, 30 for a song, 30 for a template render — and a new account starts with zero credits, so buy a credit pack or choose a paid plan before using any of them. Rendering on your own machine costs nothing.
 
 Remotion is free for individuals and for companies of up to three people. A larger company needs a [Remotion company licence](https://www.remotion.dev/docs/license); that licence is yours to hold and is not provided by these Skills.
 
