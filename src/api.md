@@ -56,7 +56,7 @@ The browser editor still shows drafts, as prompts for whoever is editing, and an
 
 ## Credits
 
-One balance pays for everything an account has made for it, whichever path made it. A new account starts with 200 credits.
+One balance pays for everything an account has made for it, whichever path made it. New accounts start with zero credits. Buy a credit pack or choose a paid plan before using paid features.
 
 | What is made | Credits |
 | --- | --- |
